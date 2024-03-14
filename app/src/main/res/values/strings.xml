@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Github App</string>
+    <string name="searchbar_hint">Username</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="username">Username</string>
+    <string name="tab_text_1">Followers</string>
+    <string name="tab_text_2">Following</string>
+    <string name="total_followers">%d Followers</string>
+    <string name="total_following">%d Following</string>
+    <string name="name">Name</string>
+    <string name="github_username">Github Username</string>
+    <string name="tvfollowing">tvFollowing</string>
+    <string name="tvfollowers">tvFollowers</string>
+    <string name="noFollower">No %s found</string>
+    <string name="image_user">Image User</string>
+</resources>
