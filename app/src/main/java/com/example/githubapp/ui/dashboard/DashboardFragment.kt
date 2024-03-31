@@ -4,18 +4,22 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.githubapp.R
 import com.example.githubapp.base.BaseFragment
-import com.example.githubapp.data.response.ItemsItem
+import com.example.githubapp.data.Result
+import com.example.githubapp.data.remote.response.ItemsItem
 import com.example.githubapp.databinding.FragmentDashboardBinding
 import com.example.githubapp.ui.adapter.AccountAdapter
+import com.example.githubapp.ui.favorite.ViewModelFactory
 
 class DashboardFragment : BaseFragment<FragmentDashboardBinding>(),
     AccountAdapter.OnItemClickCallback {
-    private val dashboardViewModel by viewModels<DashboardViewModel>()
+    private val dashboardViewModel by viewModels<DashboardViewModel>() {
+        ViewModelFactory.getInstance(requireActivity())
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -24,18 +28,29 @@ class DashboardFragment : BaseFragment<FragmentDashboardBinding>(),
         val layoutManager = LinearLayoutManager(requireContext())
         binding.rvGithub.layoutManager = layoutManager
 
-        dashboardViewModel.findUser.observe(viewLifecycleOwner) {
-            if (it.totalCount == 0) {
-                Toast.makeText(requireContext(), "User not found", Toast.LENGTH_SHORT).show()
+        dashboardViewModel.findUser.observe(viewLifecycleOwner) { result ->
+            result.let {
+                when (result) {
+                    is Result.Loading -> {
+                        showProgressBar(true)
+                    }
+
+                    is Result.Success -> {
+                        showProgressBar(false)
+                        listAccountDataService(result.data.items)
+                    }
+
+                    is Result.Error -> {
+                        showProgressBar(false)
+                    }
+                }
             }
         }
 
-        dashboardViewModel.isLoading.observe(viewLifecycleOwner, ::showProgressBar)
-        dashboardViewModel.listAccount.observe(viewLifecycleOwner, ::listAccountDataService)
         searchBarSetting()
     }
 
-    fun searchBarSetting() {
+    private fun searchBarSetting() {
         with(binding) {
             searchView.setupWithSearchBar(searchBar)
             searchView
@@ -50,6 +65,26 @@ class DashboardFragment : BaseFragment<FragmentDashboardBinding>(),
                     searchView.hide()
                     false
                 }
+
+            searchBar.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.favActionButton -> {
+                        findNavController().navigate(
+                            DashboardFragmentDirections.actionDashboardFragmentToFavoriteFragment()
+                        )
+                        true
+                    }
+
+                    R.id.themeActionButton -> {
+                        findNavController().navigate(
+                            DashboardFragmentDirections.actionDashboardFragmentToSettingFragment()
+                        )
+                        true
+                    }
+
+                    else -> false
+                }
+            }
         }
     }
 
@@ -79,6 +114,5 @@ class DashboardFragment : BaseFragment<FragmentDashboardBinding>(),
             )
         )
     }
-
 
 }

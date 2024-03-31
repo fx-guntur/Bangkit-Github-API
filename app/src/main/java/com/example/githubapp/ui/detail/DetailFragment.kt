@@ -10,13 +10,19 @@ import androidx.navigation.findNavController
 import com.bumptech.glide.Glide
 import com.example.githubapp.R
 import com.example.githubapp.base.BaseFragment
-import com.example.githubapp.data.response.DetailUserResponse
+import com.example.githubapp.data.Result
+import com.example.githubapp.data.local.entity.FavoriteEntity
 import com.example.githubapp.databinding.FragmentDetailBinding
 import com.example.githubapp.ui.adapter.SectionsPagerAdapter
+import com.example.githubapp.ui.favorite.ViewModelFactory
 import com.google.android.material.tabs.TabLayoutMediator
 
 class DetailFragment : BaseFragment<FragmentDetailBinding>() {
-    private val detailViewModel by viewModels<DetailViewModel>()
+
+    private val detailViewModel by viewModels<DetailViewModel> {
+        ViewModelFactory.getInstance(requireActivity())
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -30,23 +36,60 @@ class DetailFragment : BaseFragment<FragmentDetailBinding>() {
 
     private fun showData(username: String, savedInstanceState: Bundle?) {
         if (savedInstanceState == null) detailViewModel.findDetail(username)
-        detailViewModel.detailUser.observe(viewLifecycleOwner, ::setData)
-        detailViewModel.isLoading.observe(viewLifecycleOwner, ::showProgressBar)
+        detailViewModel.detailUser.observe(viewLifecycleOwner) { result ->
+            result?.let {
+                when (result) {
+                    is Result.Loading -> {
+                        showProgressBar(true)
+                    }
+
+                    is Result.Success -> {
+                        showProgressBar(false)
+                        setData(result.data)
+                    }
+
+                    is Result.Error -> {
+                        showProgressBar(false)
+                    }
+                }
+            }
+        }
     }
 
     private fun showProgressBar(isLoading: Boolean) {
         binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 
-    private fun setData(data: DetailUserResponse) {
-        binding.tvUserGithub.text = data.name
-        binding.tvUserId.text = data.login
-        binding.tvTotalFollower.text = getString(R.string.total_followers, data.followers)
-        binding.tvTotalFollowing.text = getString(R.string.total_following, data.following)
+    private fun setData(data: FavoriteEntity) {
+        binding.tvUserGithub.text = data.username
+        binding.tvUserId.text = data.fullName
+        binding.tvTotalFollower.text = getString(R.string.total_followers, data.totalFollower)
+        binding.tvTotalFollowing.text = getString(R.string.total_following, data.totalFollowing)
+        setIconFavoriteState(data.isFavorited)
 
         Glide.with(requireContext())
             .load(data.avatarUrl)
             .into(binding.imageView)
+
+        binding.floatingActionButton.setOnClickListener {
+            data.isFavorited = !data.isFavorited
+            setFavoriteState(data, data.isFavorited)
+            setIconFavoriteState(data.isFavorited)
+        }
+    }
+
+    private fun setFavoriteState(favoriteEntity: FavoriteEntity, status: Boolean) {
+        detailViewModel.saveFav(favoriteEntity, status)
+    }
+
+    private fun setIconFavoriteState(isFavorite: Boolean) {
+        binding.apply {
+            val icon =
+                if (isFavorite) R.drawable.baseline_favorite_24 else R.drawable.baseline_favorite_border_24
+            val contentDescription = if (isFavorite) R.string.unfavorite else R.string.favorite
+            floatingActionButton.setImageResource(icon)
+            floatingActionButton.contentDescription = resources.getString(contentDescription)
+        }
     }
 
     override fun getViewBinding(

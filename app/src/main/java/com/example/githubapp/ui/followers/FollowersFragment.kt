@@ -8,12 +8,16 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.githubapp.R
 import com.example.githubapp.base.BaseFragment
-import com.example.githubapp.data.response.ItemsItem
+import com.example.githubapp.data.Result
+import com.example.githubapp.data.remote.response.ItemsItem
 import com.example.githubapp.databinding.FragmentFollowersBinding
 import com.example.githubapp.ui.adapter.AccountAdapter
+import com.example.githubapp.ui.favorite.ViewModelFactory
 
 class FollowersFragment : BaseFragment<FragmentFollowersBinding>() {
-    private val followersViewModel by viewModels<FollowersViewModel>()
+    private val followersViewModel by viewModels<FollowersViewModel> {
+        ViewModelFactory.getInstance(requireActivity())
+    }
     private var position: Int? = null
     private var username: String? = null
 
@@ -33,25 +37,48 @@ class FollowersFragment : BaseFragment<FragmentFollowersBinding>() {
         } else {
             setFollowing(savedInstanceState)
         }
-        followersViewModel.isLoading.observe(viewLifecycleOwner, ::showProgressBar)
     }
 
     private fun setFollower(savedInstanceState: Bundle?) {
         username.takeIf { savedInstanceState == null }?.let { followersViewModel.findFollower(it) }
-        followersViewModel.listFollower.observe(viewLifecycleOwner){
-            setAdapter(it)
-            if(it.isEmpty()){
-                setNoFollowers("Followers")
+        followersViewModel.listFollower.observe(viewLifecycleOwner) { result ->
+            result.let {
+                when (result) {
+                    is Result.Loading -> {
+                        showProgressBar(true)
+                    }
+
+                    is Result.Success -> {
+                        showProgressBar(false)
+                        setAdapter(result.data)
+                    }
+
+                    is Result.Error -> {
+                        showProgressBar(false)
+                    }
+                }
             }
         }
     }
 
     private fun setFollowing(savedInstanceState: Bundle?) {
         username.takeIf { savedInstanceState == null }?.let { followersViewModel.findFollowing(it) }
-        followersViewModel.listFollowing.observe(viewLifecycleOwner){
-            setAdapter(it)
-            if(it.isEmpty()){
-                setNoFollowers("Following")
+        followersViewModel.listFollowing.observe(viewLifecycleOwner) { result ->
+            result.let {
+                when (result) {
+                    is Result.Loading -> {
+                        showProgressBar(true)
+                    }
+
+                    is Result.Success -> {
+                        showProgressBar(false)
+                        setAdapter(result.data)
+                    }
+
+                    is Result.Error -> {
+                        showProgressBar(false)
+                    }
+                }
             }
         }
     }
@@ -62,7 +89,7 @@ class FollowersFragment : BaseFragment<FragmentFollowersBinding>() {
         binding.rvFollowers.adapter = adapter
     }
 
-    private fun setNoFollowers(tabStatus: String){
+    private fun setNoFollowers(tabStatus: String) {
         binding.apply {
             tvNoFollower.apply {
                 visibility = View.VISIBLE

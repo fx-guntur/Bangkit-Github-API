@@ -1,4 +1,4 @@
-package com.example.githubapp.data.retrofit
+package com.example.githubapp.data.remote.retrofit
 
 import com.example.githubapp.BuildConfig
 import okhttp3.Interceptor
@@ -10,8 +10,12 @@ import retrofit2.converter.gson.GsonConverterFactory
 class ApiConfig {
     companion object {
         fun getApiService(): ApiService {
-            val loggingInterceptor =
+            val loggingInterceptor = if (BuildConfig.DEBUG) {
                 HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
+            } else {
+                HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.NONE)
+            }
+
             val authInterceptor = Interceptor { chain ->
                 val req = chain.request()
                 val requestHeaders = req.newBuilder()
@@ -19,15 +23,18 @@ class ApiConfig {
                     .build()
                 chain.proceed(requestHeaders)
             }
+
             val client = OkHttpClient.Builder()
                 .addInterceptor(loggingInterceptor)
                 .addInterceptor(authInterceptor)
                 .build()
+
             val retrofit = Retrofit.Builder()
                 .baseUrl(BuildConfig.GITHUB_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(client)
                 .build()
+
             return retrofit.create(ApiService::class.java)
         }
     }

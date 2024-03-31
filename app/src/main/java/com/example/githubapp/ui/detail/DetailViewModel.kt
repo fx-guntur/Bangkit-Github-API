@@ -1,46 +1,33 @@
 package com.example.githubapp.ui.detail
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.githubapp.data.response.DetailUserResponse
-import com.example.githubapp.data.retrofit.ApiConfig
-import com.example.githubapp.ui.dashboard.DashboardViewModel
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import androidx.lifecycle.viewModelScope
+import com.example.githubapp.data.AccountRepository
+import com.example.githubapp.data.Result
+import com.example.githubapp.data.local.entity.FavoriteEntity
+import kotlinx.coroutines.launch
 
-class DetailViewModel : ViewModel() {
-    private val _detailUser = MutableLiveData<DetailUserResponse>()
-    val detailUser: LiveData<DetailUserResponse> = _detailUser
-
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: MutableLiveData<Boolean> = _isLoading
+class DetailViewModel(private val accountRepository: AccountRepository) : ViewModel() {
+    private val _detailUser = MutableLiveData<com.example.githubapp.data.Result<FavoriteEntity>>()
+    val detailUser: LiveData<Result<FavoriteEntity>> = _detailUser
 
     fun findDetail(username: String) {
-        _isLoading.value = true
-        val client = ApiConfig.getApiService().getDetail(username)
-        client.enqueue(object : Callback<DetailUserResponse> {
-            override fun onResponse(
-                call: Call<DetailUserResponse>,
-                response: Response<DetailUserResponse>
-            ) {
-                _isLoading.value = false
-                if (response.isSuccessful) {
-                    val responseBody = response.body()
-                    responseBody.also { result ->
-                        _detailUser.value = result
-                    }
-                } else {
-                    Log.e(DashboardViewModel.TAG, "onFailure: ${response.message()}")
-                }
+        viewModelScope.launch {
+            accountRepository.getDetail(username).collect() {
+                _detailUser.postValue(it)
             }
-
-            override fun onFailure(call: Call<DetailUserResponse>, t: Throwable) {
-                _isLoading.value = false
-                Log.e(DashboardViewModel.TAG, "onFailure: ${t.message}")
-            }
-        })
+        }
     }
+
+    fun saveFav(news: FavoriteEntity, isFav: Boolean) {
+        viewModelScope.launch {
+            accountRepository.setFavoriteAcc(news, isFav)
+        }
+    }
+
+//    fun isFav(data: FavoriteEntity, username: String) : Boolean {
+//
+//    }
 }

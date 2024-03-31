@@ -13,4 +13,13 @@
     <string name="tvfollowers">tvFollowers</string>
     <string name="noFollower">No %s found</string>
     <string name="image_user">Image User</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="favorite_button">Favorite button</string>
+    <string name="favorite_acc">favorite acc</string>
+    <string name="favorite_menu">favorite menu</string>
+    <string name="theme_menu">theme_menu</string>
+    <string name="unfavorite">unfavorite</string>
+    <string name="favorite">favorite</string>
+    <string name="dark_mode">dark mode</string>
 </resources>
